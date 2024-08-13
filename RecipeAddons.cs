@@ -124,6 +124,38 @@ namespace RecipeAddons
         }
 
 
+        // ///////////////////////////////////////////////
+        // Removes any modifier for this item from any recipe or ingredientGroup that uses it
+        public static bool RemoveModifierFromIngrediantAndIngredientGroup(int xId)
+        {
+            bool retValue = true;
+
+            retValue &= RemoveModifierFromIngrediantGroup(xId);
+            retValue &= RemoveModifierFromIngrediant(xId);
+            return retValue;
+
+        }
+
+        // ///////////////////////////////////////////////
+        // Removes any modifier for this item from any ingredientGroup that uses it
+        public static bool RemoveModifierFromIngrediantGroup(int xId)
+        {
+
+            // ###################################################
+            // ###################################################
+            // ###################################################
+            //     Fill this out so AllMaltisMalt works.
+            // ###################################################
+            // ###################################################
+            // ###################################################
+
+
+
+
+            return true;
+
+        }
+
 
 
         // ///////////////////////////////////////////////
@@ -260,8 +292,9 @@ namespace RecipeAddons
 
             //Remove modifiers from all recipes that use that item, so any type of the item may be used (e.g.: any juice instead of grape juice for wine)
             if (_allJuiceIsJuice.Value) RemoveModifierFromIngrediant(s_itemIdJuice);
-            if (_allMaltIsMalt.Value) RemoveModifierFromIngrediant(s_itemIdMalt);
-            if (_allMaltIsMalt.Value) RemoveModifierFromIngrediant(s_itemIdMaltToasted);
+            //Remove modifiers from all recipes that use that item, and also from any ingredient groups that use the 
+            if (_allMaltIsMalt.Value) RemoveModifierFromIngrediantAndIngredientGroup(s_itemIdMalt);
+            if (_allMaltIsMalt.Value) RemoveModifierFromIngrediantAndIngredientGroup(s_itemIdMaltToasted);
 
 
             // Add an ingrediant to an existing recipe
