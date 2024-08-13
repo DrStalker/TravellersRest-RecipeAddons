@@ -1,10 +1,12 @@
-# TravellersRest-ModNameHere
+# TravellersRest-RecipeAddons
 
-A Traveller's Rest mod to DESCRIPTION
+A Traveller's Rest mod to see how far I can puch recipe changes without adding any new items to the game.
+
+* Use any juice in recipes that use juice (note: activating this will convert existing items that use a fixed juice to rasberry flavor)
 
 ## Downloading the mod
 
-Adding Traveller's Rest to Nexus Mods is in progress, until that is complete you can download the mod from [compiled-releases](https://github.com/DrStalker/TravellersRest-ModNameHere/tree/main/compiled-releases)
+Mods are available on [Nexus Mods](https://www.nexusmods.com/travellersrest) or you can download the mod from [compiled-releases](https://github.com/DrStalker/TravellersRest-RecipeAddons/tree/main/compiled-releases)
 
 
 ## How to install mods:

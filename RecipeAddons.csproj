@@ -24,6 +24,12 @@
     <Reference Include="Assembly-CSharp">
       <HintPath>C:\Games\Steam\steamapps\common\Travellers Rest\Windows\TravellersRest_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
+    <Reference Include="net.nep.bepinex.restfultweaks">
+      <HintPath>C:\Games\Steam\steamapps\common\Travellers Rest\Windows\BepInEx\plugins\net.nep.bepinex.restfultweaks.dll</HintPath>
+    </Reference>
+    <Reference Include="Sirenix.Serialization">
+      <HintPath>C:\Games\Steam\steamapps\common\Travellers Rest\Windows\TravellersRest_Data\Managed\Sirenix.Serialization.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>C:\Games\Steam\steamapps\common\Travellers Rest\Windows\TravellersRest_Data\Managed\UnityEngine.UI.dll</HintPath>
     </Reference>
