@@ -18,9 +18,8 @@ namespace RecipeAddons
 
         private static ConfigEntry<bool> _debugLogging;
         private static ConfigEntry<bool> _allJuiceIsJuice;
-        private static ConfigEntry<bool> _fruitVodka;
-        private static ConfigEntry<bool> _spicedRum;
         private static ConfigEntry<bool> _biggerBurger;
+        private static ConfigEntry<bool> _FruitAndVegInterchange;
 
         public static readonly int firstRecipeId = 831821414;  //The hope being to never conclict with another mod!
         private static int numAddedRecipies = 0;
@@ -40,10 +39,8 @@ namespace RecipeAddons
             // bind to config settings
             _debugLogging = Config.Bind("Debug", "Debug Logging", false, "Logs additional information to console");
             _allJuiceIsJuice = Config.Bind("Recipes", "All juice is juice", false, "Recipies using juice can use any type of juice");
-            _fruitVodka = Config.Bind("Recipes", "Fruit vodka", false, "Add recipe for fruit vodka to cocktail table");
-            _spicedRum = Config.Bind("Recipes", "Spiced Rum", false, "Add recipe for spiced rum to cocktail table");
-            _biggerBurger = Config.Bind("Recipes", "Bigger Burger", false, "complete burger is more complete");
-
+            _biggerBurger = Config.Bind("Recipes", "Bigger Burger", false, "Adds sauce to cheesburger (addExtraIngredient)");
+            _FruitAndVegInterchange = Config.Bind("Recipes", "Interchangable Fruit and Veg", false, "Both fruit and veg can be used in any recipe that for either (addExtraTypeToGroup)");
         }
 
         private void Awake()
@@ -86,14 +83,49 @@ namespace RecipeAddons
             }
         }
 
-
+        private static ItemDatabaseAccessor myItemDatabaseAccessor;
+        public static ItemDatabaseAccessor itemDatabaseAccessor
+        {
+            get
+            {
+                if (myItemDatabaseAccessor == null) myItemDatabaseAccessor = UnityEngine.Object.FindObjectOfType<ItemDatabaseAccessor>();
+                return myItemDatabaseAccessor;
+            }
+        }
+        private static ItemDatabase myitemDatabaseSO;
+        public static ItemDatabase itemDatabaseSO
+        {
+            get
+            {
+                if (myitemDatabaseSO == null) myitemDatabaseSO = Traverse.Create(itemDatabaseAccessor).Field("itemDatabaseSO").GetValue<ItemDatabase>();
+                return myitemDatabaseSO;
+            }
+        }
 
         private static int getNextRecipeId()
         {
             return firstRecipeId + numAddedRecipies;
         }
 
-        public static void addExtraIngredient(int recipeId, Item item, int amount = 1, Item mod = null)
+        public static bool addExtraTypeToGroup(int ingredientGroupId, IngredientType newType)
+        {
+            IngredientGroup groupItem = (IngredientGroup)ItemDatabaseAccessor.GetItem(ingredientGroupId);
+            if (groupItem is null)
+            {
+                DebugLog(String.Format("addExtraTypeToGroup: Failed to find ingredientGroup with id {0}", ingredientGroupId));
+                return false;
+            }
+            DebugLog(String.Format("addExtraTypeToGroup: Pre: ingredientGroup {0}: type count {1}", ingredientGroupId, groupItem.ingredientsTypes.Length));
+            List<IngredientType> itList = groupItem.ingredientsTypes.ToList();
+            itList.Add(newType);
+            groupItem.ingredientsTypes = itList.ToArray();
+            DebugLog(String.Format("addExtraTypeToGroup: Pst: ingredientGroup {0}: type count {1}", ingredientGroupId, groupItem.ingredientsTypes.Length));
+            return true;
+
+        }
+
+
+        public static bool addExtraIngredient(int recipeId, Item item, int amount = 1, Item mod = null)
         {
             Recipe r = RecipeDatabaseAccessor.GetRecipe(recipeId);
             DebugLog(String.Format("addExtraIngredient: Looking for recipe {0} int {1} known recipes", recipeId, recipeDatabaseSO.recipes.Length));
@@ -117,6 +149,7 @@ namespace RecipeAddons
                 }
             }
             if (!found) DebugLog(String.Format("addExtraIngredient: Failed to find recipe with id {0}", recipeId));
+            return (found);
         }
 
         public static void changeOutputAmount(int recipeId, int x, bool addative = false)
@@ -186,6 +219,13 @@ namespace RecipeAddons
                 
 
             }
+
+            if (_FruitAndVegInterchange.Value)
+            {
+                addExtraTypeToGroup(-9, IngredientType.Fruit);
+                addExtraTypeToGroup(-2, IngredientType.Veg);
+            }
+
         }
     }
 }
