@@ -25,14 +25,15 @@ namespace RecipeAddons
         private static int numAddedRecipies = 0;
 
 
-        public static readonly int itemIdJuice = 1325;
-        public static readonly int itemIdBurgerComplete = 320;
-        public static readonly int itemIdOnionRings = 1327;
-        public static readonly int itemIdChili = 1366;
-        public static readonly int itemIdMayo = 1359;
-        public static readonly int itemIdSauce = 1272;
-        public static readonly int itemIdCheeseAny = -4;
-
+        public static readonly int s_itemIdJuice = 1325;
+        public static readonly int s_itemIdBurgerComplete = 320;
+        public static readonly int s_itemIdOnionRings = 1327;
+        public static readonly int s_itemIdChili = 1366;
+        public static readonly int s_itemIdMayo = 1359;
+        public static readonly int s_itemIdSauce = 1272;
+        public static readonly int s_itemIdCheeseAny = -4;
+        public static readonly int s_recipeBurgerComplete = 320;
+        public static readonly int s_recipeBurgerCheese = 321;
 
         public Plugin()
         {
@@ -201,25 +202,23 @@ namespace RecipeAddons
                 }
 
             }
+            // Add an ingrediant to an existing recipe
             if (_biggerBurger.Value)
             {
                 DebugLog("RecipeDatabaseAccessor.Awake.PostFix: Building a better Burger");
-                Item onionRings = ItemDatabaseAccessor.GetItem(itemIdOnionRings);
-                Item mayo = ItemDatabaseAccessor.GetItem(itemIdMayo);
-                Item chili = ItemDatabaseAccessor.GetItem(itemIdChili);
-                Item sauce = ItemDatabaseAccessor.GetItem(itemIdSauce);
-                Item cheese = ItemDatabaseAccessor.GetItem(itemIdCheeseAny);
-
                 //Limit three "choice" ingrediants, 5 total?
-                //addExtraIngredient(321, cheese, 1, null);
-                //addExtraIngredient(321, onionRings, 1, null);
-                //addExtraIngredient(320, chili, 1, null);
-                //addExtraIngredient(320, mayo, 1, null);
-                addExtraIngredient(321, sauce, 1, null);
-                
+
+                addExtraIngredient(s_recipeBurgerCheese, ItemDatabaseAccessor.GetItem(s_itemIdSauce), 1, null);
+                //addExtraIngredient(s_recipeBurgerCheese, ItemDatabaseAccessor.GetItem(s_itemIdCheeseAny), 1, null);
+                //addExtraIngredient(s_recipeBurgerCheese, ItemDatabaseAccessor.GetItem(s_itemIdOnionRings);, 1, null);
+                //addExtraIngredient(s_recipeBurgerCheese, ItemDatabaseAccessor.GetItem(s_itemIdChili);, 1, null);
+                //addExtraIngredient(s_recipeBurgerCheese, ItemDatabaseAccessor.GetItem(s_itemIdMayo), 1, null);
+
 
             }
 
+
+            // Expand the existing IngredientTypes to include more types
             if (_FruitAndVegInterchange.Value)
             {
                 addExtraTypeToGroup(-9, IngredientType.Fruit);
