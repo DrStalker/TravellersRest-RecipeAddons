@@ -3,6 +3,8 @@
 A Traveller's Rest mod to see how far I can puch recipe changes without adding any new items to the game.
 
 * Use any juice in recipes that use juice (note: activating this will convert existing items that use a fixed juice to rasberry flavor)
+* Add an extra item to an existing Recipe (Example: cheeseburger with sauce)
+* Add an exta item type to an IngredientGroup (example: Fruit and Vege are interchangable)
 
 ## Downloading the mod
 

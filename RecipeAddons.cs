@@ -7,6 +7,8 @@ using static UnityEngine.UIElements.UIRAtlasManager;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Data.SqlTypes;
+using System.Net.Http.Headers;
 
 namespace RecipeAddons
 {
@@ -18,6 +20,7 @@ namespace RecipeAddons
 
         private static ConfigEntry<bool> _debugLogging;
         private static ConfigEntry<bool> _allJuiceIsJuice;
+        private static ConfigEntry<bool> _allMaltIsMalt;
         private static ConfigEntry<bool> _biggerBurger;
         private static ConfigEntry<bool> _FruitAndVegInterchange;
 
@@ -32,8 +35,13 @@ namespace RecipeAddons
         public static readonly int s_itemIdMayo = 1359;
         public static readonly int s_itemIdSauce = 1272;
         public static readonly int s_itemIdCheeseAny = -4;
+        public static readonly int s_itemIdMalt = 1544;
+        public static readonly int s_itemIdMaltToasted = 1545;  
+
+
         public static readonly int s_recipeBurgerComplete = 320;
         public static readonly int s_recipeBurgerCheese = 321;
+
 
         public Plugin()
         {
@@ -42,6 +50,7 @@ namespace RecipeAddons
             _allJuiceIsJuice = Config.Bind("Recipes", "All juice is juice", false, "Recipies using juice can use any type of juice");
             _biggerBurger = Config.Bind("Recipes", "Bigger Burger", false, "Adds sauce to cheesburger (addExtraIngredient)");
             _FruitAndVegInterchange = Config.Bind("Recipes", "Interchangable Fruit and Veg", false, "Both fruit and veg can be used in any recipe that for either (addExtraTypeToGroup)");
+            _allMaltIsMalt = Config.Bind("Recipes", "All malt is malt", false, "Use any type of malt for any recipe (toasted/plain still matters)");
         }
 
         private void Awake()
@@ -108,6 +117,56 @@ namespace RecipeAddons
             return firstRecipeId + numAddedRecipies;
         }
 
+        private static int Item2id(Item x)
+        {
+            int ingrediantId = Traverse.Create(x).Field("id").GetValue<int>();
+            return ingrediantId;
+        }
+
+
+
+
+        // ///////////////////////////////////////////////
+        // Removes any modifier for this item from any recipe that uses it
+        // Call using item, itemId, array of item ids.
+        public static bool RemoveModifierFromIngrediant(Item x)
+        {
+            return RemoveModifierFromIngrediant(Item2id(x));
+        }
+        public static bool RemoveModifierFromIngrediant(int[] x)
+        {
+            bool retValue = true;
+            for (int i=0; i<x.Length;  i++)
+            {
+                retValue &= RemoveModifierFromIngrediant(x[i]); //return false if any of these fail
+            }
+            return retValue;
+        }
+        public static bool RemoveModifierFromIngrediant(int xId)
+        {
+            int foundCount = 0;
+            for (int i = 0; i < recipeDatabaseSO.recipes.Length; i++)
+            {
+                //Step through each RecipeIngredient in ingredientsNeeded[]
+                for (int j = 0; j < recipeDatabaseSO.recipes[i].ingredientsNeeded.Length; j++)
+                {
+                    //steal the private ids
+                    int ingrediantId    = Item2id(recipeDatabaseSO.recipes[i].ingredientsNeeded[j].item);
+                    // int ingrediantmodId = Item2id(recipeDatabaseSO.recipes[i].ingredientsNeeded[j].mod);
+                    if (ingrediantId == xId)
+                    {
+                        foundCount++;
+                        recipeDatabaseSO.recipes[i].ingredientsNeeded[j].mod = null; // remove the mod from RecipeIngredient struct
+                    }
+                }
+            }
+            DebugLog(String.Format("RemoveModifierFromIngrediant: Removed modifer from {0} occurance of item {1}", foundCount, xId));
+            return (foundCount > 0);
+        }
+
+        // ///////////////////////////////////////////////
+        // Adds an extra Type of ingrediant to an existing Item group.  If used on an IngredientGroup that has items but no group, the group takes precense over the item list.
+
         public static bool addExtraTypeToGroup(int ingredientGroupId, IngredientType newType)
         {
             IngredientGroup groupItem = (IngredientGroup)ItemDatabaseAccessor.GetItem(ingredientGroupId);
@@ -125,7 +184,9 @@ namespace RecipeAddons
 
         }
 
-
+        // ///////////////////////////////////////////////
+        // Adds an extra ingrediant to an existing recipe. 
+        // NOTE: limit 5 ingredients, limtts 3 ingrediants that require the player to choose an option otherwise the crafting GUI throws erorrs
         public static bool addExtraIngredient(int recipeId, Item item, int amount = 1, Item mod = null)
         {
             Recipe r = RecipeDatabaseAccessor.GetRecipe(recipeId);
@@ -153,13 +214,27 @@ namespace RecipeAddons
             return (found);
         }
 
-        public static void changeOutputAmount(int recipeId, int x, bool addative = false)
-        {
+        // ///////////////////////////////////////////////////////////////////////
+        // To-Do functions
 
+        public static bool SwapIngredients(Item from, Item to, bool keepModifiers = false)
+        {
+            return SwapIngredients(Item2id(from), Item2id(to), keepModifiers);
+        }
+        public static bool SwapIngredients(int from, int to, bool keepModifiers=false)
+        {
+            return true;
         }
 
 
-        public static void addNewRecipe(Item output, int amount, int craftTime, int Fuel, bool noReuse, ItemMod[] ingrediants, Recipe.RecipeGroup recipeGroup)
+
+        public static bool changeOutputAmount(int recipeId, int x, bool addative = false)
+        {
+            return true;
+        }
+
+
+        public static bool addNewRecipe(Item output, int amount, int craftTime, int Fuel, bool noReuse, ItemMod[] ingrediants, Recipe.RecipeGroup recipeGroup)
         {
             int newId = getNextRecipeId();
 
@@ -168,53 +243,33 @@ namespace RecipeAddons
 
 
             numAddedRecipies++;
+            return true;
         }
 
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         // Recipe Stuff
-        // The Recipe database is not accessible during Plugin.Awake(), so we attach to the Accessor Awake() function
+        // The Recipe database is not populated ully during Plugin.Awake(), so we attach to the RecipeDatabaseAccessor Awake() function
 
         [HarmonyPatch(typeof(RecipeDatabaseAccessor), "Awake")]
         [HarmonyPostfix]
         private static void RecipeDatabaseAccessorAwakePostFix(RecipeDatabaseAccessor __instance)
         {
             DebugLog("RecipeDatabaseAccessor.Awake.PostFix");
-            Recipe[] allRecipes = RecipeDatabaseAccessor.GetAllRecipes();
-            DebugLog(String.Format("Found {0} recipes", allRecipes.Length));
 
-            for (int i = 0; i < allRecipes.Length; i++)
-            {
-                if (_allJuiceIsJuice.Value)
-                {
-                    //Step through each RecipeIngredient in ingredientsNeeded[]
-                    for (int j = 0; j < allRecipes[i].ingredientsNeeded.Length; j++)
-                    {
-                        //steal the private ids
-                        int ingrediantId = Traverse.Create(allRecipes[i].ingredientsNeeded[j].item).Field("id").GetValue<int>();
-                        int ingrediantmodId = Traverse.Create(allRecipes[i].ingredientsNeeded[j].mod).Field("id").GetValue<int>();
-                        if (ingrediantId == itemIdJuice)
-                        {
-                            allRecipes[i].ingredientsNeeded[j].mod = null; //should be an empty item, not null? GetItem(0) gets null though...
-                        }
 
-                    }
-                }
+            //Remove modifiers from all recipes that use that item, so any type of the item may be used (e.g.: any juice instead of grape juice for wine)
+            if (_allJuiceIsJuice.Value) RemoveModifierFromIngrediant(s_itemIdJuice);
+            if (_allMaltIsMalt.Value) RemoveModifierFromIngrediant(s_itemIdMalt);
+            if (_allMaltIsMalt.Value) RemoveModifierFromIngrediant(s_itemIdMaltToasted);
 
-            }
+
             // Add an ingrediant to an existing recipe
             if (_biggerBurger.Value)
             {
                 DebugLog("RecipeDatabaseAccessor.Awake.PostFix: Building a better Burger");
                 //Limit three "choice" ingrediants, 5 total?
-
                 addExtraIngredient(s_recipeBurgerCheese, ItemDatabaseAccessor.GetItem(s_itemIdSauce), 1, null);
-                //addExtraIngredient(s_recipeBurgerCheese, ItemDatabaseAccessor.GetItem(s_itemIdCheeseAny), 1, null);
-                //addExtraIngredient(s_recipeBurgerCheese, ItemDatabaseAccessor.GetItem(s_itemIdOnionRings);, 1, null);
-                //addExtraIngredient(s_recipeBurgerCheese, ItemDatabaseAccessor.GetItem(s_itemIdChili);, 1, null);
-                //addExtraIngredient(s_recipeBurgerCheese, ItemDatabaseAccessor.GetItem(s_itemIdMayo), 1, null);
-
-
             }
 
 
