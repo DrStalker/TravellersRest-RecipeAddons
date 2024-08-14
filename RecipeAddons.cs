@@ -23,6 +23,7 @@ namespace RecipeAddons
         private static ConfigEntry<bool> _allMaltIsMalt;
         private static ConfigEntry<bool> _biggerBurger;
         private static ConfigEntry<bool> _FruitAndVegInterchange;
+        private static ConfigEntry<bool> _allHopsIsHops;
 
         public static readonly int firstRecipeId = 831821414;  //The hope being to never conclict with another mod!
         private static int numAddedRecipies = 0;
@@ -36,7 +37,9 @@ namespace RecipeAddons
         public static readonly int s_itemIdSauce = 1272;
         public static readonly int s_itemIdCheeseAny = -4;
         public static readonly int s_itemIdMalt = 1544;
-        public static readonly int s_itemIdMaltToasted = 1545;  
+        public static readonly int s_itemIdMaltToasted = 1545;
+
+        public static readonly List<int> s_itemGroupHops = new List<int> { -39, -38, -37, -36 };
 
 
         public static readonly int s_recipeBurgerComplete = 320;
@@ -51,6 +54,7 @@ namespace RecipeAddons
             _biggerBurger = Config.Bind("Recipes", "Bigger Burger", false, "Adds sauce to cheesburger (addExtraIngredient)");
             _FruitAndVegInterchange = Config.Bind("Recipes", "Interchangable Fruit and Veg", false, "Both fruit and veg can be used in any recipe that for either (addExtraTypeToGroup)");
             _allMaltIsMalt = Config.Bind("Recipes", "All malt is malt", false, "Use any type of malt for any recipe (toasted/plain still matters)");
+            _allHopsIsHops = Config.Bind("Recipes", "All hops is hops", false, "Use any type of hops for any recipe");
         }
 
         private void Awake()
@@ -337,7 +341,14 @@ namespace RecipeAddons
             //Remove modifiers from all recipes that use that item, and also from any ingredient groups that use the 
             if (_allMaltIsMalt.Value) RemoveModifierFromIngrediantAndIngredientGroup(s_itemIdMalt);
             if (_allMaltIsMalt.Value) RemoveModifierFromIngrediantAndIngredientGroup(s_itemIdMaltToasted);
-
+            if (_allHopsIsHops.Value)
+            {
+                foreach (int hopsGroup in s_itemGroupHops)
+                {
+                    addExtraTypeToGroup(hopsGroup, IngredientType.Hop); //Adding the type overrides the the list of specific items. 
+                }
+                
+            }
 
             // Add an ingrediant to an existing recipe
             if (_biggerBurger.Value)
