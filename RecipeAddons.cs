@@ -140,18 +140,60 @@ namespace RecipeAddons
         // Removes any modifier for this item from any ingredientGroup that uses it
         public static bool RemoveModifierFromIngrediantGroup(int xId)
         {
+            DebugLog(String.Format("RemoveModifierFromIngrediantGroup: Looking for Item:{0}", xId));
+            int countModifiedIngrediantGroups = 0;
 
-            // ###################################################
-            // ###################################################
-            // ###################################################
-            //     Fill this out so AllMaltisMalt works.
-            // ###################################################
-            // ###################################################
-            // ###################################################
+            for (int i = 0; i < itemDatabaseSO.items.Length; i++)
+            {
+                if (itemDatabaseSO.items[i].GetType() == typeof(IngredientGroup))
+                {
+                    int reflectedIngrediantGroupId = Traverse.Create(itemDatabaseSO.items[i]).Field("id").GetValue<int>();
+                    List<ItemMod> reflectedPossibleItems = Traverse.Create(itemDatabaseSO.items[i]).Field("possibleItems").GetValue<List<ItemMod>>();
+                    //DebugLog(String.Format("RemoveModifierFromIngrediantGroup: Looking at recipe group Item:{0} with {1} Possible Items", xId, reflectedPossibleItems.Count));
 
+                    // https://stackoverflow.com/questions/51526/changing-the-value-of-an-element-in-a-list-of-structs
 
+                    bool foundThingToChange = false;
+                    foreach (ItemMod y in reflectedPossibleItems)
+                    {
+                        int reflectedItemId = Traverse.Create(y.item).Field("id").GetValue<int>();
+                        if (reflectedItemId == xId)
+                        {
+                            foundThingToChange = true;
+                            break;
+                        }
+                    }
+                    if (foundThingToChange)
+                    {
+                        // This section probably shows both my lack of c# knowledge and my creativity.
+                        // All this is to change the content of structs in a list that is a private object, because 
+                        // it's not possible to change them during a foreach and a for loop using reflectedPossibleItems[i]
+                        // is creating copies instead of editing the original object, because it's a struct instead of a 
+                        // class which would have been so much easier here.
+                        List<ItemMod> newPossibleItems = new List<ItemMod>();
+                        foreach (ItemMod y in reflectedPossibleItems)
+                        {
+                            int reflectedItemId = Traverse.Create(y.item).Field("id").GetValue<int>();
+                            ItemMod tempMod = new ItemMod();
+                            tempMod.item = y.item;
+                            tempMod.mod = (reflectedItemId == xId) ? null : y.mod;  //removing teh modifier if the item matches the target ID
+                            newPossibleItems.Add(tempMod);
+                        }
+                        reflectedPossibleItems.Clear();
+                        reflectedPossibleItems.AddRange(newPossibleItems);
 
+                        countModifiedIngrediantGroups++;
+                    }
 
+                }
+ 
+            }
+            if (countModifiedIngrediantGroups == 0)
+            {
+                DebugLog(String.Format("RemoveModifierFromIngrediantGroup: Did not find any Item:{0} in any IngredientGroup.PossibleItems[]", xId));
+                return false;
+            }
+            DebugLog(String.Format("RemoveModifierFromIngrediantGroup: Modified {1} ingrediantGroups containing PossibleItem:{0}", xId, countModifiedIngrediantGroups));
             return true;
 
         }
