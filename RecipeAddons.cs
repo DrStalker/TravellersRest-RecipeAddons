@@ -29,6 +29,8 @@ namespace RecipeAddons
         private static int numAddedRecipies = 0;
 
 
+        //Assorted item Ids, so functions can refer to theses instead of using "magic numbers"
+
         public static readonly int s_itemIdJuice = 1325;
         public static readonly int s_itemIdBurgerComplete = 320;
         public static readonly int s_itemIdOnionRings = 1327;
@@ -38,9 +40,10 @@ namespace RecipeAddons
         public static readonly int s_itemIdCheeseAny = -4;
         public static readonly int s_itemIdMalt = 1544;
         public static readonly int s_itemIdMaltToasted = 1545;
+        public static readonly int s_itemIdFruit = -2;
+        public static readonly int s_itemIdVeg = -9;
 
-        public static readonly List<int> s_itemGroupHops = new List<int> { -39, -38, -37, -36 };
-
+        public static readonly List<int> s_itemGroupHops = new List<int> { -42, -41, -40 };
 
         public static readonly int s_recipeBurgerComplete = 320;
         public static readonly int s_recipeBurgerCheese = 321;
@@ -53,8 +56,8 @@ namespace RecipeAddons
             _allJuiceIsJuice = Config.Bind("Recipes", "All juice is juice", false, "Recipies using juice can use any type of juice");
             _biggerBurger = Config.Bind("Recipes", "Bigger Burger", false, "Adds sauce to cheesburger (addExtraIngredient)");
             _FruitAndVegInterchange = Config.Bind("Recipes", "Interchangable Fruit and Veg", false, "Both fruit and veg can be used in any recipe that for either (addExtraTypeToGroup)");
-            _allMaltIsMalt = Config.Bind("Recipes", "All malt is malt", false, "Use any type of malt for any recipe (toasted/plain still matters)");
-            _allHopsIsHops = Config.Bind("Recipes", "All hops is hops", false, "Use any type of hops for any recipe");
+            _allMaltIsMalt = Config.Bind("Recipes", "All malt is malt", false, "Use any type of malt for any recipe (toasted/plain still matters) (RemoveModifierFromIngrediantAndIngredientGroup)");
+            _allHopsIsHops = Config.Bind("Recipes", "All hops is hops", false, "Use any type of hops for any recipe (addExtraTypeToGroup overriding specific list fo specific items)");
         }
 
         private void Awake()
@@ -132,10 +135,10 @@ namespace RecipeAddons
         // Removes any modifier for this item from any recipe or ingredientGroup that uses it
         public static bool RemoveModifierFromIngrediantAndIngredientGroup(int xId)
         {
-            bool retValue = true;
-
-            retValue &= RemoveModifierFromIngrediantGroup(xId);
-            retValue &= RemoveModifierFromIngrediant(xId);
+            bool retValue = false;
+            // return true if at least on of these returns true
+            retValue |= RemoveModifierFromIngrediantGroup(xId);
+            retValue |= RemoveModifierFromIngrediant(xId);
             return retValue;
 
         }
@@ -362,8 +365,8 @@ namespace RecipeAddons
             // Expand the existing IngredientTypes to include more types
             if (_FruitAndVegInterchange.Value)
             {
-                addExtraTypeToGroup(-9, IngredientType.Fruit);
-                addExtraTypeToGroup(-2, IngredientType.Veg);
+                addExtraTypeToGroup(s_itemIdVeg, IngredientType.Fruit);
+                addExtraTypeToGroup(s_itemIdFruit, IngredientType.Veg);
             }
 
         }
