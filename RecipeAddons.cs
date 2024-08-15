@@ -21,7 +21,8 @@ namespace RecipeAddons
         private static ConfigEntry<bool> _debugLogging;
         private static ConfigEntry<bool> _allJuiceIsJuice;
         private static ConfigEntry<bool> _allMaltIsMalt;
-        private static ConfigEntry<bool> _biggerBurger;
+        private static ConfigEntry<bool> _addItemCheesebugerSauce;
+        private static ConfigEntry<bool> _addItemPorridgeFruit;
         private static ConfigEntry<bool> _FruitAndVegInterchange;
         private static ConfigEntry<bool> _allHopsIsHops;
 
@@ -47,14 +48,15 @@ namespace RecipeAddons
 
         public static readonly int s_recipeBurgerComplete = 320;
         public static readonly int s_recipeBurgerCheese = 321;
-
+        public static readonly int s_recipePorridge = 190;
 
         public Plugin()
         {
             // bind to config settings
             _debugLogging = Config.Bind("Debug", "Debug Logging", false, "Logs additional information to console");
             _allJuiceIsJuice = Config.Bind("Recipes", "All juice is juice", false, "Recipies using juice can use any type of juice");
-            _biggerBurger = Config.Bind("Recipes", "Bigger Burger", false, "Adds sauce to cheesburger (addExtraIngredient)");
+            _addItemCheesebugerSauce = Config.Bind("Recipes", "Sauce on Cheeseburger", false, "Adds sauce to cheesburger (addExtraIngredient)");
+            _addItemPorridgeFruit = Config.Bind("Recipes", "Sauce on Cheeseburger", false, "Adds fruit to porridge (addExtraIngredient)");
             _FruitAndVegInterchange = Config.Bind("Recipes", "Interchangable Fruit and Veg", false, "Both fruit and veg can be used in any recipe that for either (addExtraTypeToGroup)");
             _allMaltIsMalt = Config.Bind("Recipes", "All malt is malt", false, "Use any type of malt for any recipe (toasted/plain still matters) (RemoveModifierFromIngrediantAndIngredientGroup)");
             _allHopsIsHops = Config.Bind("Recipes", "All hops is hops", false, "Use any type of hops for any recipe (addExtraTypeToGroup overriding specific list fo specific items)");
@@ -128,6 +130,86 @@ namespace RecipeAddons
         {
             int ingrediantId = Traverse.Create(x).Field("id").GetValue<int>();
             return ingrediantId;
+        }
+
+        // ///////////////////////////////////////////////
+        // Removes given an Item id or item, find the recipe number that creates it.
+        public static int GetRecipeByOutput(Item xItem)
+        {
+            return GetRecipeByOutput(Item2id(xItem));
+        }
+        public static int GetRecipeByOutput(int xId)
+        {
+            // #############################################
+            //            IMPLEMENT ME!
+            // #############################################
+
+            return 0;
+
+        }
+
+
+
+
+        // //////////////////////////////////////////
+        // Make that item in that recipe generic, based on the items type.
+        // really needs a mini-databse of type -> ItemGroup, probably a custom struct/class
+
+        public static bool MakeItemInRecipeGeneric(int RecipieID, int ItemID)
+        {
+
+            return true;
+        }
+
+        public static List<int> GetAllItemsInIngrediantGroup(IngredientGroup x)
+        {
+            List<int> retValue = new List<int>();
+            if (x.ingredientsTypes.Length > 0)
+            {
+                // return collection of all GetAllItemsOfType(...)
+
+                // #############################################
+                //            IMPLEMENT ME!
+                // #############################################
+            }
+            else
+            {
+                List<ItemMod> reflectedPossibleItems = Traverse.Create(x).Field("possibleItems").GetValue<List<ItemMod>>();
+                //pull item IDs out of reflectedPossibleItems
+
+                // #############################################
+                //            IMPLEMENT ME!
+                // #############################################
+            }
+
+            return retValue;
+
+
+        }
+        public static List<int> GetAllItemsOfType(IngredientType x)
+        {
+            List<int> retValue = new List<int>();
+            // Go through itemDatabaseSO looking for (item.GetType() == typeof(Food) && item.IngredientType = x)
+
+            // #############################################
+            //            IMPLEMENT ME!
+            // #############################################
+
+            return retValue;
+        }
+
+
+        // ///////////////////////////////////////////////
+        // Replace this item in recipe with generic group
+        public static bool MakeItemsGeneric(List<int> itemIds, IngredientGroup newGroup)
+        {
+            // go through every recipe and when the a specic item is found (id in itemds) replace it with a generic one
+            // wait, that will break things when more than 3 items are selectable.
+
+            // #############################################
+            //            IMPLEMENT ME!
+            // #############################################
+            return true;
         }
 
 
@@ -266,8 +348,12 @@ namespace RecipeAddons
         }
 
         // ///////////////////////////////////////////////
-        // Adds an extra ingrediant to an existing recipe. 
+        // Adds an extra ingrediant to an existing recipe. Item to add can be an Item or a (int) with the numeric itemId. The added item can set an amount and/or a required modifier.
         // NOTE: limit 5 ingredients, limtts 3 ingrediants that require the player to choose an option otherwise the crafting GUI throws erorrs
+        public static bool addExtraIngredient(int recipeId, int itemId, int amount = 1, Item mod = null)
+        {
+            return(addExtraIngredient(recipeId, ItemDatabaseAccessor.GetItem(itemId), amount, mod));
+        }
         public static bool addExtraIngredient(int recipeId, Item item, int amount = 1, Item mod = null)
         {
             Recipe r = RecipeDatabaseAccessor.GetRecipe(recipeId);
@@ -354,11 +440,12 @@ namespace RecipeAddons
             }
 
             // Add an ingrediant to an existing recipe
-            if (_biggerBurger.Value)
+            if (_addItemPorridgeFruit.Value) addExtraIngredient(s_recipePorridge, s_itemIdFruit, 2, null);
+            if (_addItemCheesebugerSauce.Value)
             {
                 DebugLog("RecipeDatabaseAccessor.Awake.PostFix: Building a better Burger");
                 //Limit three "choice" ingrediants, 5 total?
-                addExtraIngredient(s_recipeBurgerCheese, ItemDatabaseAccessor.GetItem(s_itemIdSauce), 1, null);
+                addExtraIngredient(s_recipeBurgerCheese, s_itemIdSauce, 1, null);
             }
 
 
