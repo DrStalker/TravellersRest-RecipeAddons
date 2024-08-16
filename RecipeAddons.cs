@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Data.SqlTypes;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
+using static Recipe;
 
 namespace RecipeAddons
 {
@@ -157,22 +158,27 @@ namespace RecipeAddons
         // Add a new Recipe to the end of the the array of all recipes
         public static bool AddRecipeToDatabase(Recipe x)
         {
+
+            // Using the real recipeDatabaseSO instead of the imitation Plugin.recipeDatabaseSO
+            RecipeDatabase realDB = Traverse.Create(RecipeDatabaseAccessor.GetInstance()).Field("recipeDatabaseSO").GetValue<RecipeDatabase>();
+
+            DebugLog("AddRecipeToDatabase()");
             if (x == null)
             {
-                DebugLog(String.Format("AddRecipeToDatabase(): ERROR recipe to add is null!"));
+                DebugLog("AddRecipeToDatabase(): ERROR recipe to add is null!");
                 return false;
             }
             // Convert to list, add extra item, convert back
-            int sizePre = recipeDatabaseSO.recipes.Length;
+            int sizePre = realDB.recipes.Length;
             List<Recipe> recipeList = new List<Recipe>();
-            recipeList.AddRange(recipeDatabaseSO.recipes);
+            recipeList.AddRange(realDB.recipes);
             recipeList.Add(x);
-            recipeDatabaseSO.recipes=recipeList.ToArray();
+            realDB.recipes=recipeList.ToArray();
             numAddedRecipies++;
-            int sizePost = recipeDatabaseSO.recipes.Length;
+            int sizePost = realDB.recipes.Length;
             if (sizePost == sizePre + 1)
             {
-                DebugLog("AddRecipeToDatabase(): New entry added to recipe database");
+                DebugLog($"AddRecipeToDatabase(): New entry added to recipe database: id: {x.id}");
                 return true;
             }
             else if (sizePost == sizePre)
@@ -192,6 +198,11 @@ namespace RecipeAddons
             }
         }
 
+        // Make a RecipeIngredient when given the... ingredients.
+        public static RecipeIngredient Item2RecipeIngredient(int item, int amount = 1, Item mod = null)
+        {
+            return Item2RecipeIngredient(ItemDatabaseAccessor.GetItem(item), amount, mod);
+        }
         public static RecipeIngredient Item2RecipeIngredient (Item item, int amount=1, Item mod=null)
         {
             RecipeIngredient retValue;
@@ -202,13 +213,14 @@ namespace RecipeAddons
         }
 
         // Make a new Recipe object with specific values
-        public static Recipe MakeNewRecipe(Item outputItem, int outputAmount, RecipeIngredient[] ingredientsNeeded,  int fuel, int timeMinutes, Recipe.RecipePage page)
+        public static Recipe MakeNewRecipe(Item outputItem, int outputAmount, RecipeIngredient[] ingredientsNeeded,  int timeMinutes=0, int fuel=0,
+            Recipe.RecipeGroup recipeGroup = Recipe.RecipeGroup.Food, Recipe.RecipePage page = Recipe.RecipePage.All)
         {
-
-            
-
-            Recipe r = new Recipe();
+            DebugLog($"MakeNewRecipe()");
+            Recipe r = new Recipe();  //[Warning: Unity Log] Recipe must be instantiated using the ScriptableObject.CreateInstance method instead of new Recipe.
             r.id=getNextRecipeId();
+            r.recipeGroup = recipeGroup;
+            r.page = page;
             r.ingredientsNeeded = ingredientsNeeded;
             r.replacedRecipe = false; 
             r.newRecipe = null;
@@ -598,6 +610,16 @@ namespace RecipeAddons
                 addExtraTypeToGroup(s_itemIdFruit, IngredientType.Veg);
             }
 
+            if (_addrecipeCraftBarrel.Value)
+            {
+
+                RecipeIngredient[] ri = { Item2RecipeIngredient(s_itemIdPlank, 10), Item2RecipeIngredient(s_itemIdNail, 10), };
+                Recipe barrelRecipe = MakeNewRecipe(ItemDatabaseAccessor.GetItem(s_itemIdDecorativeBarrel), 1, ri, 5, 5, Recipe.RecipeGroup.Wood, Recipe.RecipePage.All);
+                AddRecipeToDatabase(barrelRecipe);
+                // Maybe I need to forse RecipeBookUI RecipeList CHCMIHPFGLC to update?
+                // Start by adding some checks around this code to see if teh real RecipeDatase grows or just my copy
+
+            }
 
 
 
