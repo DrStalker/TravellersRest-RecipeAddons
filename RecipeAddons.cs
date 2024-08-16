@@ -194,7 +194,6 @@ namespace RecipeAddons
 
         public static RecipeIngredient Item2RecipeIngredient (Item item, int amount=1, Item mod=null)
         {
-            if (item is null) return null;
             RecipeIngredient retValue;
             retValue.item = item;
             retValue.amount = amount;  
@@ -598,6 +597,9 @@ namespace RecipeAddons
                 addExtraTypeToGroup(s_itemIdVeg, IngredientType.Fruit);
                 addExtraTypeToGroup(s_itemIdFruit, IngredientType.Veg);
             }
+
+
+
 
         }
     }
