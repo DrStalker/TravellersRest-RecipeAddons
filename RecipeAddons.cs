@@ -9,6 +9,7 @@ using System.Linq;
 using System.Reflection;
 using System.Data.SqlTypes;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 
 namespace RecipeAddons
 {
@@ -25,9 +26,11 @@ namespace RecipeAddons
         private static ConfigEntry<bool> _addItemPorridgeFruit;
         private static ConfigEntry<bool> _FruitAndVegInterchange;
         private static ConfigEntry<bool> _allHopsIsHops;
+        private static ConfigEntry<bool> _addrecipeCraftBarrel;
 
-        public static readonly int firstRecipeId = 831821414;  //The hope being to never conclict with another mod!
+        public static int firstRecipeId = PluginInfo.PLUGIN_GUID.GetHashCode(); //Never change the mod GUID after people start using it!  Or if you do, replace this with the original hash value.
         private static int numAddedRecipies = 0;
+        private static int numRecipeIDsIssued = 0;
 
 
         //Assorted item Ids, so functions can refer to theses instead of using "magic numbers"
@@ -43,6 +46,13 @@ namespace RecipeAddons
         public static readonly int s_itemIdMaltToasted = 1545;
         public static readonly int s_itemIdFruit = -2;
         public static readonly int s_itemIdVeg = -9;
+        public static readonly int s_itemIdPlank = 1036;
+        public static readonly int s_itemIdNail = 1045;
+        public static readonly int s_itemIdIronBar = 1043;
+        public static readonly int s_itemIdIronSheet = 1046;
+        public static readonly int s_itemIdDecorativeBarrel = 648;
+
+
 
         public static readonly List<int> s_itemGroupHops = new List<int> { -42, -41, -40 };
 
@@ -60,6 +70,7 @@ namespace RecipeAddons
             _FruitAndVegInterchange = Config.Bind("Recipes", "Interchangable Fruit and Veg", false, "Both fruit and veg can be used in any recipe that for either (addExtraTypeToGroup)");
             _allMaltIsMalt = Config.Bind("Recipes", "All malt is malt", false, "Use any type of malt for any recipe (toasted/plain still matters) (RemoveModifierFromIngrediantAndIngredientGroup)");
             _allHopsIsHops = Config.Bind("Recipes", "All hops is hops", false, "Use any type of hops for any recipe (addExtraTypeToGroup overriding specific list fo specific items)");
+            _addrecipeCraftBarrel = Config.Bind("Recipes", "Craftable Decorative Barrel", false, "Craft more decorative barrels (MakeNewRecipe)");
         }
 
         private void Awake()
@@ -68,6 +79,16 @@ namespace RecipeAddons
             Log = Logger;
             _harmony = Harmony.CreateAndPatchAll(typeof(Plugin));
             Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
+            Logger.LogInfo($"firstRecipeId: {firstRecipeId}");
+            if (firstRecipeId < 10000)
+            {
+                Logger.LogInfo($"firstRecipeId {firstRecipeId} is low enough that is risks collisions with official recipes, adding 1000");
+                firstRecipeId += 1000;
+
+            }
+
+       
+            
         }
 
         private void OnDestroy()
@@ -123,13 +144,137 @@ namespace RecipeAddons
 
         private static int getNextRecipeId()
         {
-            return firstRecipeId + numAddedRecipies;
+            return firstRecipeId + numRecipeIDsIssued++; //If one gets wsted, oh well. This does mean recipe ids can change if the exact order things are doen in changes, but I think that is mostly OK.
+
         }
 
         private static int Item2id(Item x)
         {
             int ingrediantId = Traverse.Create(x).Field("id").GetValue<int>();
             return ingrediantId;
+        }
+
+        // Add a new Recipe to the end of the the array of all recipes
+        public static bool AddRecipeToDatabase(Recipe x)
+        {
+            if (x == null)
+            {
+                DebugLog(String.Format("AddRecipeToDatabase(): ERROR recipe to add is null!"));
+                return false;
+            }
+            // Convert to list, add extra item, convert back
+            int sizePre = recipeDatabaseSO.recipes.Length;
+            List<Recipe> recipeList = new List<Recipe>();
+            recipeList.AddRange(recipeDatabaseSO.recipes);
+            recipeList.Add(x);
+            recipeDatabaseSO.recipes=recipeList.ToArray();
+            numAddedRecipies++;
+            int sizePost = recipeDatabaseSO.recipes.Length;
+            if (sizePost == sizePre + 1)
+            {
+                DebugLog("AddRecipeToDatabase(): New entry added to recipe database");
+                return true;
+            }
+            else if (sizePost == sizePre)
+            {
+                Log.LogError("AddRecipeToDatabase(): ERROR Recipe Database size unchanged!");
+                return false;
+            }
+            else if (sizePost == 0)
+            {
+                Log.LogError("AddRecipeToDatabase(): ERROR Recipe Database is now empty!");
+                return false;
+            }
+            else
+            {
+                Log.LogError($"AddRecipeToDatabase(): ERROR Something weird happened! Recipe database size went from {sizePre} to {sizePost}");
+                return false;
+            }
+        }
+
+        public static RecipeIngredient Item2RecipeIngredient (Item item, int amount=1, Item mod=null)
+        {
+            if (item is null) return null;
+            RecipeIngredient retValue;
+            retValue.item = item;
+            retValue.amount = amount;  
+            retValue.mod = mod;
+            return retValue;
+        }
+
+        // Make a new Recipe object with specific values
+        public static Recipe MakeNewRecipe(Item outputItem, int outputAmount, RecipeIngredient[] ingredientsNeeded,  int fuel, int timeMinutes, Recipe.RecipePage page)
+        {
+
+            
+
+            Recipe r = new Recipe();
+            r.id=getNextRecipeId();
+            r.ingredientsNeeded = ingredientsNeeded;
+            r.replacedRecipe = false; 
+            r.newRecipe = null;
+            r.recipeSilverCost = 1;
+            r.fuel = fuel;
+            r.time = new GameDate.Time(0, 0, 0, 0, timeMinutes);
+            r.output = new ItemAmount(outputItem, outputAmount);
+            r.excludeIngredients = new List<Item>();
+            r.page = page;
+            r.reputationRequired = null; // this can be null (like porridge) or a key to a Dictionary that is populated with key ReputationDBAccessor.reputationDatabaseSO.reputations.repnumber - this is both levels & speciic unlocks liek "Cheese"
+            r.newRecipeFromUpdateCropsAndRecipes = false;
+            r.recipeFragments = 0;
+            r.shopSilverPrice = 1.0f;
+            r.itemToBuy = null; //item to show in show when recipe is purchased?
+            r.modiferTypes = new IngredientType[0]; // <-- cheeseburger & porridge are empty array, good enough for now
+            r.modiferNeeded = new IngredientType[0]; // <-- cheeseburger & porridge are empty array, good enough for now
+            r.excludeFromTrends = false;
+            r.excludeFromOrders = false;
+            r.multiOptions = false; // <-- cheeseburger & porridge are false, good enough for now
+            r.mainItemMultiOptions = null; // <-- cheeseburger & porridge are null, good enough for now
+            r.cannotRepeatIngredients = false;
+
+            // three of the private fileds are static.  One is maybe temporary? So lets ignore it.
+            // Recipe reflectedRecipeAux = Traverse.Create(r).Field("recipeAux").GetValue<Recipe>();
+            return r;
+            /*
+            List of all fields  in a Recipe:
+            
+            ~~~ Set by default in Recipe constructor ~~~
+            public bool usingNewRecipesSystem = true; 
+            public Recipe.RecipeGroup recipeGroup = Recipe.RecipeGroup.Food;
+            public Recipe.RecipeUnlock unlock = Recipe.RecipeUnlock.FromBeginning;
+	        public bool saveIngredientsAdded = true;
+	        public List<IngredientModifier> excludedModifiers = new List<IngredientModifier>();
+
+            ~~~ public ~~~
+            -public int id;
+	        -public RecipeIngredient[] ingredientsNeeded;        
+	        ~public bool replacedRecipe;
+	        ~public Recipe newRecipe;
+	        -public float recipeSilverCost;
+	        -public int fuel;
+	        -public GameDate.Time time;
+	        -public ItemAmount output;
+	        ~public List<Item> excludeIngredients;
+	        -public Recipe.RecipePage page;
+	        ~public ReputationInfo reputationRequired;
+	        ~public bool newRecipeFromUpdateCropsAndRecipes;
+	        ~public int recipeFragments;
+	        ~public float shopSilverPrice;
+	        ~public Item itemToBuy;
+	        +public IngredientType[] modiferTypes;
+	        +public IngredientType[] modiferNeeded;
+	        ~public bool excludeFromTrends;
+	        ~public bool excludeFromOrders;
+	        ~public bool multiOptions;
+	        ~public Item mainItemMultiOptions;
+	        ~public bool cannotRepeatIngredients;
+
+            ~~~ private ~~~
+	        private Recipe recipeAux;
+	        private static Item itemAux;
+	        private static HashSet<int> recipesAux;
+	        private static RecipeList[] craftersList;
+            */
         }
 
         // ///////////////////////////////////////////////
@@ -147,8 +292,6 @@ namespace RecipeAddons
             return 0;
 
         }
-
-
 
 
         // //////////////////////////////////////////
