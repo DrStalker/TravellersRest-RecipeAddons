@@ -617,8 +617,8 @@ namespace RecipeAddons
                 RecipeIngredient[] ri = { Item2RecipeIngredient(s_itemIdPlank, 10), Item2RecipeIngredient(s_itemIdNail, 10), };
                 Recipe barrelRecipe = MakeNewRecipe(ItemDatabaseAccessor.GetItem(s_itemIdDecorativeBarrel), 1, ri, 5, 5, Recipe.RecipeGroup.Wood, Recipe.RecipePage.All);
                 AddRecipeToDatabase(barrelRecipe);
-                // Maybe I need to forse RecipeBookUI RecipeList CHCMIHPFGLC to update?
-                // Start by adding some checks around this code to see if teh real RecipeDatase grows or just my copy
+                // Maybe I need to force RecipeBookUI RecipeList CHCMIHPFGLC to update?
+
 
             }
 
