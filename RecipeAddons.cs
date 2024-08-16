@@ -218,6 +218,7 @@ namespace RecipeAddons
         {
             DebugLog($"MakeNewRecipe()");
             Recipe r = new Recipe();  //[Warning: Unity Log] Recipe must be instantiated using the ScriptableObject.CreateInstance method instead of new Recipe.
+            r.name = outputItem.name;
             r.id=getNextRecipeId();
             r.recipeGroup = recipeGroup;
             r.page = page;
