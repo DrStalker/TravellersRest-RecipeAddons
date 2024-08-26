@@ -1,6 +1,6 @@
 # TravellersRest-RecipeAddons
 
-A Traveller's Rest mod to see how far I can puch recipe changes without adding any new items to the game.
+A Traveller's Rest mod to see how far I can push recipe changes without adding any new items to the game.
 
 ##Current features:
 
@@ -28,7 +28,7 @@ Add recipe: get this to work, instead of just popping up "new recipe added" when
 
 ##A note for any modders building on this:
 
-From quick testing the UI will break if a recipe has more than five ingrediants or more than three selectable ingrediants.
+From quick testing the UI will break if a recipe has more than five ingredients or more than three selectable ingredients.
 
 
 ##Downloading the mod
@@ -54,10 +54,7 @@ Mods are available on [Nexus Mods](https://www.nexusmods.com/travellersrest) or 
 
 ## Is this mod save to add/remove mid play-through?
 
-This mod can be added to a existing save, but with some quirks; If you adjust recipes to allow modifiers wherethere were previously none the game will pick an item for the missing modifier, so all your existing wine will be rasberry flavored because the juice mdifier is missing.
-
-Removing it will cause 
-
+This mod can be added to a existing save, but with some quirks; If you adjust recipes to allow modifiers where there were previously none the game will pick an item for the missing modifier, so all your existing wine will be rasberry flavored because the juice modifier was missing. nothing breaks, you'll just have some odd foods/drinks.
 
 
 ## Traveller's Rest Modding Guide
