@@ -59,7 +59,7 @@ namespace RecipeAddons
 
         public static readonly int s_recipeBurgerComplete = 320;
         public static readonly int s_recipeBurgerCheese = 321;
-        public static readonly int s_recipePorridge = 190;
+        public static readonly int s_recipePorridge = 74;
 
         public Plugin()
         {
@@ -67,11 +67,11 @@ namespace RecipeAddons
             _debugLogging = Config.Bind("Debug", "Debug Logging", false, "Logs additional information to console");
             _allJuiceIsJuice = Config.Bind("Recipes", "All juice is juice", false, "Recipies using juice can use any type of juice");
             _addItemCheesebugerSauce = Config.Bind("Recipes", "Sauce on Cheeseburger", false, "Adds sauce to cheesburger (addExtraIngredient)");
-            _addItemPorridgeFruit = Config.Bind("Recipes", "Sauce on Cheeseburger", false, "Adds fruit to porridge (addExtraIngredient)");
+            _addItemPorridgeFruit = Config.Bind("Recipes", "Porrige Needs Fruit", false, "Adds fruit to porridge (addExtraIngredient)");
             _FruitAndVegInterchange = Config.Bind("Recipes", "Interchangable Fruit and Veg", false, "Both fruit and veg can be used in any recipe that for either (addExtraTypeToGroup)");
             _allMaltIsMalt = Config.Bind("Recipes", "All malt is malt", false, "Use any type of malt for any recipe (toasted/plain still matters) (RemoveModifierFromIngrediantAndIngredientGroup)");
             _allHopsIsHops = Config.Bind("Recipes", "All hops is hops", false, "Use any type of hops for any recipe (addExtraTypeToGroup overriding specific list fo specific items)");
-            _addrecipeCraftBarrel = Config.Bind("Recipes", "Craftable Decorative Barrel", false, "Craft more decorative barrels (MakeNewRecipe)");
+            _addrecipeCraftBarrel = Config.Bind("Recipes", "Craftable Decorative Barrel", false, "NOT WORKING Craft more decorative barrels (MakeNewRecipe)");
         }
 
         private void Awake()
